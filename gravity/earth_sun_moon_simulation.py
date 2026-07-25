@@ -38,6 +38,8 @@ def simulate_n_body(bodies: list[Body], dt_seconds: float, steps: int) -> dict[s
     trajectories = {body.name: [(body.x, body.y)] for body in bodies}
 
     for _ in range(steps):
+        # 1. Calculate INITIAL accelerations (if first step) or use previous step's final accelerations.
+        # For simplicity, we calculate them fresh here, though it can be optimized.
         accelerations = []
         for i, body in enumerate(bodies):
             ax = 0.0
@@ -56,11 +58,36 @@ def simulate_n_body(bodies: list[Body], dt_seconds: float, steps: int) -> dict[s
                 ay += force_per_mass * dy / dist
             accelerations.append((ax, ay))
 
-        for body, (ax, ay) in zip(bodies, accelerations):
-            body.vx += ax * dt_seconds
-            body.vy += ay * dt_seconds
+        # 2. First KICK (half-step velocity) & DRIFT (full-step position)
+        for i, (body, (ax, ay)) in enumerate(zip(bodies, accelerations)):
+            body.vx += 0.5 * ax * dt_seconds
+            body.vy += 0.5 * ay * dt_seconds
             body.x += body.vx * dt_seconds
             body.y += body.vy * dt_seconds
+
+        # 3. Recalculate NEW accelerations based on NEW positions
+        new_accelerations = []
+        for i, body in enumerate(bodies):
+            ax = 0.0
+            ay = 0.0
+            for j, other in enumerate(bodies):
+                if i == j:
+                    continue
+                dx = other.x - body.x
+                dy = other.y - body.y
+                dist_sq = dx * dx + dy * dy
+                dist = dist_sq**0.5
+                if dist == 0.0:
+                    continue
+                force_per_mass = G * other.mass / dist_sq
+                ax += force_per_mass * dx / dist
+                ay += force_per_mass * dy / dist
+            new_accelerations.append((ax, ay))
+
+        # 4. Second KICK (half-step velocity) with NEW accelerations
+        for i, (body, (ax, ay)) in enumerate(zip(bodies, new_accelerations)):
+            body.vx += 0.5 * ax * dt_seconds
+            body.vy += 0.5 * ay * dt_seconds
             trajectories[body.name].append((body.x, body.y))
 
     return trajectories
@@ -76,7 +103,7 @@ def write_trajectories_csv(trajectories: dict[str, list[tuple[float, float]]], o
                 writer.writerow([body_name, step, x, y])
 
 
-def write_trajectories_svg(trajectories: dict[str, list[tuple[float, float]]], output_path: Path) -> None:
+def write_trajectories_svg(trajectories: dict[str, list[tuple[float, float]]], output_path: Path, days: float, step_hours: float) -> None:
     all_points = [point for points in trajectories.values() for point in points]
     min_x = min(x for x, _ in all_points)
     max_x = max(x for x, _ in all_points)
@@ -107,8 +134,7 @@ def write_trajectories_svg(trajectories: dict[str, list[tuple[float, float]]], o
     with output_path.open("w", encoding="utf-8") as handle:
         handle.write("<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900' viewBox='0 0 900 900'>\n")
         handle.write("  <rect width='100%' height='100%' fill='#050b18'/>\n")
-        handle.write("  <text x='20' y='35' fill='white' font-size='22'>Earth-Sun-Moon n-body simulation</text>\n")
-
+        handle.write(f"  <text x='20' y='35' fill='white' font-size='22'>Earth-Sun-Moon n-body simulation ({days} days, {step_hours} hour intervals)</text>\n")
         for body_name, points in trajectories.items():
             converted = [to_viewport(x, y) for x, y in points]
             path_points = " ".join(f"{x:.2f},{y:.2f}" for x, y in converted)
@@ -135,7 +161,7 @@ def run_simulation(days: float, step_hours: float) -> tuple[Path, Path]:
     visualization_path = repo_root / "visualizations" / "earth_sun_moon_simulation.svg"
 
     write_trajectories_csv(trajectories, dataset_path)
-    write_trajectories_svg(trajectories, visualization_path)
+    write_trajectories_svg(trajectories, visualization_path, days, step_hours)
     return dataset_path, visualization_path
 
 
