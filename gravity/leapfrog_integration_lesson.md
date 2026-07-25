@@ -3,9 +3,9 @@
 Welcome to your first lesson in numerical methods! We are going to look at the math behind how computers simulate continuous physics (like gravity) in discrete time steps.
 
 ## The Problem: The Euler Method
-In `earth_sun_moon_simulation.py`, you currently calculate orbits using the **Forward Euler Method**. It's the most intuitive way to simulate physics.
+In `earth_sun_moon_simulation.py`, you initially calculated orbits using the **Forward Euler Method**. It's the most intuitive way to simulate physics.
 
-Here is the core logic you currently use:
+Here is the core logic you originally used:
 1. Calculate the current force (acceleration) on a planet.
 2. Update its velocity: $v_{new} = v_{old} + a \cdot \Delta t$
 3. Update its position: $x_{new} = x_{old} + v_{new} \cdot \Delta t$
@@ -32,11 +32,23 @@ Instead of calculating position and velocity at the exact same time, we calculat
 4. **Kick (Half-step velocity):** Finish updating the velocity for the remaining half-step.
    $$v_{t+1} = v_{t+1/2} + a_{t+1} \cdot \frac{\Delta t}{2}$$
 
-Because the position is updated using the velocity from the *middle* of the time step, it averages out the "overshoot" error perfectly. Energy fluctuates slightly frame-to-frame, but it never spirals out of control!
+## Why Does it Conserve Energy? The Math of "Symplectic" Geometry
 
-## Your Challenge
-Let's upgrade your code! Open up `earth_sun_moon_simulation.py`. 
+Saying an integrator is "symplectic" specifically means that it preserves **phase space volume** over time.
 
-Right now, your `simulate_n_body` function does everything in one big loop. To implement Leapfrog, we need to separate the "calculate acceleration" math from the "update position/velocity" math.
+In physics, "Phase Space" is a multi-dimensional plot where we track both a particle's position ($x$) and momentum ($p$) simultaneously. Liouville's Theorem states that for conservative forces (like gravity), if you take a cluster of particles, the volume they occupy in phase space must remain perfectly constant as they evolve over time. 
 
-Are you ready to refactor `simulate_n_body` to use the **Kick-Drift-Kick** Leapfrog algorithm? I can either guide you step-by-step, or I can write the code and explain it!
+When you use the basic **Euler Method**, the math doesn't respect Liouville's Theorem. The volume in phase space slowly expands with each time step. As phase space expands, artificial energy is injected into the system.
+
+**Leapfrog** is a symplectic integrator because its algebraic transformations exactly preserve this phase-space area. This is true for two key mathematical reasons:
+
+1. **Time-Reversibility (Symmetry):** 
+   If you run a Leapfrog simulation forward for 100 steps, negate the velocities, and run it backward for 100 steps, you will end up in the *exact* same starting position. Euler integration cannot do this; the errors compound asymmetrically. Because Leapfrog is perfectly symmetric in time (Kick-Drift-Kick), any energy error introduced in the first half-step is essentially "canceled out" by the second half-step.
+
+2. **Shadow Hamiltonians:**
+   A Hamiltonian ($H$) is the equation for the total energy of a system (Kinetic + Potential). While Leapfrog doesn't perfectly conserve the *exact* true Hamiltonian of the physical universe, it perfectly conserves a "Shadow Hamiltonian" ($H'$). 
+   
+   $H'$ is incredibly close to $H$ (the difference is proportional to $\Delta t^2$). Because it strictly obeys this nearby Shadow Hamiltonian, the simulation's energy will rapidly oscillate around the true energy value, but it is mathematically bounded and **cannot drift or spiral out of control** over time.
+
+## Conclusion
+By refactoring `simulate_n_body` to separate the kicks and the drift, and recalculating the forces in between, you successfully transformed your simulation from an unstable Euler approximation into a robust, symplectic physics engine!
