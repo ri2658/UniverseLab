@@ -55,10 +55,6 @@ Outputs:
 
 ## Sample Visualizations
 
-### Earth-Sun-Moon orbit plot
-
-![Earth-Sun-Moon orbit plot](visualizations/earth_sun_moon_simulation.svg)
-
 ### Earth-Sun-Moon animation
 
 ![Earth-Sun-Moon animation](visualizations/earth_sun_moon_3d.gif)
@@ -83,5 +79,4 @@ Outputs:
 ## Notes
 
 - The gravity simulation uses leapfrog integration so the orbit stays stable over longer runs.
-- The animation intentionally shows only one animated 3-body visualization, as requested.
 - The example outputs in `visualizations/` are generated artifacts and can be recreated by rerunning the scripts above.
