@@ -1,6 +1,6 @@
 # Numerical Methods: Fixing "Leaky" Physics
 
-Welcome to your first lesson in numerical methods! We are going to look at the math behind how computers simulate continuous physics (like gravity) in discrete time steps.
+We are going to look at the math behind how computers simulate continuous physics (like gravity) in discrete time steps.
 
 ## The Problem: The Euler Method
 In `earth_sun_moon_simulation.py`, you initially calculated orbits using the **Forward Euler Method**. It's the most intuitive way to simulate physics.

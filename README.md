@@ -16,7 +16,7 @@ Key files:
 
 - `gravity/earth_sun_moon_simulation.py` generates trajectories and the static SVG output, and exposes reusable `compute_accelerations`, `leapfrog_step` and `total_energy` helpers.
 - `gravity/animate_simulation.py` renders the three-body animation.
-- `gravity/leapfrog_integration_lesson.md` explains why leapfrog is more stable than forward Euler.
+- `docs/leapfrog_integration_lesson.md` explains why leapfrog is more stable than forward Euler.
 - `gravity/test_earth_sun_moon_simulation.py` covers the simulation behavior, including a one-year energy-conservation check.
 
 ### Exoplanet inference
@@ -26,13 +26,13 @@ The `machine_learning/` folder contains a short lesson and script that generate 
 Key files:
 
 - `machine_learning/mcmc_exoplanet.py` generates synthetic data and runs the sampler.
-- `machine_learning/mcmc_exoplanet_lesson.md` explains the Bayesian fitting workflow.
+- `docs/mcmc_exoplanet_lesson.md` explains the Bayesian fitting workflow.
 
 ### Keplerian orbit fitting (exercise)
 
 The next step up: simulate a star and an eccentric planet with the leapfrog engine, then recover all seven orbital parameters (and the planet's minimum mass) from noisy, gappy RV data.
 
-- `machine_learning/keplerian_rv_lesson.md` covers Kepler's equation, the RV equation, reparametrization and priors, periodogram aliases, the Goodman & Weare stretch move, and autocorrelation-time diagnostics.
+- `docs/keplerian_rv_lesson.md` covers Kepler's equation, the RV equation, reparametrization and priors, periodogram aliases, the Goodman & Weare stretch move, and autocorrelation-time diagnostics.
 - `machine_learning/keplerian_rv_fit.ipynb` is a guided notebook with 8 TODOs, each followed by a self-check cell.
 
 ## Run the Projects
