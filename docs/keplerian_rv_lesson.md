@@ -53,7 +53,7 @@ For a circle, the angle grows uniformly: $\theta = 2\pi t/P$. For an ellipse it 
 
 | Anomaly | Symbol | Meaning |
 |---|---|---|
-| **Mean** | $M$ | A fictitious angle that *does* grow uniformly: $M = \frac{2\pi}{P}(t - t_p)$. It's really just "fraction of the orbit elapsed" in radians. |
+| **Mean** | $M$ | A fictitious angle that *does* grow uniformly: $M = \frac{2\pi}{P}(t - t_{peri})$. It's really just "fraction of the orbit elapsed" in radians. |
 | **Eccentric** | $E$ | A geometric helper angle. Draw the circle of radius $a$ centred on the ellipse's *centre*, project the planet perpendicular to the major axis onto that circle, and measure the angle of that point from the centre. |
 | **True** | $\nu$ | The actual angle between the planet and periastron, as seen from the focus. This is the physical one. |
 
@@ -65,7 +65,7 @@ Mean and eccentric anomaly are linked by **Kepler's equation**:
 
 $$M = E - e \sin E$$
 
-**Where it comes from.** Kepler's second law says the area swept out from the focus grows linearly in time. Since the whole ellipse (area $\pi a b$, with $b = a\sqrt{1-e^2}$) is swept in one period, the area swept since periastron is $\pi a b \cdot \frac{t - t_p}{P} = \tfrac{1}{2}ab\,M$. Now compute the same area geometrically. Squashing the auxiliary circle by $b/a$ turns it into the ellipse. On the circle, the region swept from the focus is a circular sector from the centre (area $\tfrac12 a^2 E$) minus a triangle with base $ae$ (the centre-to-focus distance) and height $a\sin E$ (area $\tfrac12 a^2 e\sin E$). Squashing multiplies every area by $b/a$, so the ellipse's area is $\tfrac12 ab\,(E - e\sin E)$. Setting the two areas equal gives Kepler's equation.
+**Where it comes from.** Kepler's second law says the area swept out from the focus grows linearly in time. Since the whole ellipse (area $\pi a b$, with $b = a\sqrt{1-e^2}$) is swept in one period, the area swept since periastron is $\pi a b \cdot \frac{t - t_{peri}}{P} = \tfrac{1}{2}ab\,M$. Now compute the same area geometrically. Squashing the auxiliary circle by $b/a$ turns it into the ellipse. On the circle, the region swept from the focus is a circular sector from the centre (area $\tfrac12 a^2 E$) minus a triangle with base $ae$ (the centre-to-focus distance) and height $a\sin E$ (area $\tfrac12 a^2 e\sin E$). Squashing multiplies every area by $b/a$, so the ellipse's area is $\tfrac12 ab\,(E - e\sin E)$. Setting the two areas equal gives Kepler's equation.
 
 Going from $E$ to $M$ is trivial. We need the opposite direction ($M$ is what we know from the time), and that has **no closed-form solution** in elementary functions. This one equation launched centuries of numerical methods; Newton himself worked on it.
 
@@ -83,7 +83,8 @@ $$\nu = 2\,\operatorname{atan2}\!\left(\sqrt{1+e}\,\sin\tfrac{E}{2},\; \sqrt{1-e
 
 ### The radial-velocity equation
 
-Put the observer far away and let $\hat{z}$ point **away** from them, so that positive $v_r$ means receding (redshift). The orbital plane is tilted by the **inclination** $i$ relative to the sky plane ($i = 90°$ is edge-on). It crosses the sky plane along the *line of nodes*. The **ascending node** is the crossing where the star moves away from us, and the **argument of periastron** $\omega$ is the angle, measured in the orbital plane in the direction of motion, from the ascending node to the star's periastron. The star's angle from the node is then $\nu + \omega$, and its distance along the line of sight is
+Put the observer far away and let $\hat{z}$ point **away** from them, so that positive $v_r$ means receding (redshift). The orbital plane is tilted by the **inclination** $i$ relative to the sky plane ($i = 90°$ is edge-on). It crosses the sky plane along the *line of nodes*. The **ascending node** $\nu$ 
+is the crossing where the star moves away from us, and the **argument of periastron** $\omega$ is the angle, measured in the orbital plane in the direction of motion, from the ascending node to the star's periastron. The star's angle from the node is then $\nu + \omega$, and its distance along the line of sight is
 
 $$z = r_\star \sin(\nu + \omega)\sin i$$
 
