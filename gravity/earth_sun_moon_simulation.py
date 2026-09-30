@@ -34,60 +34,74 @@ def create_earth_sun_moon_system() -> list[Body]:
     return [sun, earth, moon]
 
 
+def compute_accelerations(bodies: list[Body]) -> list[tuple[float, float]]:
+    """Newtonian gravitational acceleration on every body from every other body."""
+    accelerations = []
+    for i, body in enumerate(bodies):
+        ax = 0.0
+        ay = 0.0
+        for j, other in enumerate(bodies):
+            if i == j:
+                continue
+            dx = other.x - body.x
+            dy = other.y - body.y
+            dist_sq = dx * dx + dy * dy
+            dist = dist_sq**0.5
+            if dist == 0.0:
+                continue
+            force_per_mass = G * other.mass / dist_sq
+            ax += force_per_mass * dx / dist
+            ay += force_per_mass * dy / dist
+        accelerations.append((ax, ay))
+    return accelerations
+
+
+def leapfrog_step(
+    bodies: list[Body], dt_seconds: float, accelerations: list[tuple[float, float]]
+) -> list[tuple[float, float]]:
+    """Advance bodies in place by one kick-drift-kick step.
+
+    Takes the accelerations at the current positions and returns the accelerations
+    at the new positions, so the caller can reuse them for the next step's first kick.
+    """
+    # 1. First KICK (half-step velocity) & DRIFT (full-step position)
+    for body, (ax, ay) in zip(bodies, accelerations):
+        body.vx += 0.5 * ax * dt_seconds
+        body.vy += 0.5 * ay * dt_seconds
+        body.x += body.vx * dt_seconds
+        body.y += body.vy * dt_seconds
+
+    # 2. Recalculate NEW accelerations based on NEW positions
+    new_accelerations = compute_accelerations(bodies)
+
+    # 3. Second KICK (half-step velocity) with NEW accelerations
+    for body, (ax, ay) in zip(bodies, new_accelerations):
+        body.vx += 0.5 * ax * dt_seconds
+        body.vy += 0.5 * ay * dt_seconds
+
+    return new_accelerations
+
+
+def total_energy(bodies: list[Body]) -> float:
+    """Kinetic plus gravitational potential energy of the system, in joules."""
+    kinetic = sum(0.5 * body.mass * (body.vx**2 + body.vy**2) for body in bodies)
+    potential = 0.0
+    for i, body in enumerate(bodies):
+        for other in bodies[i + 1 :]:
+            dist = ((other.x - body.x) ** 2 + (other.y - body.y) ** 2) ** 0.5
+            potential -= G * body.mass * other.mass / dist
+    return kinetic + potential
+
+
 def simulate_n_body(bodies: list[Body], dt_seconds: float, steps: int) -> dict[str, list[tuple[float, float]]]:
     trajectories = {body.name: [(body.x, body.y)] for body in bodies}
 
+    # The end-of-step accelerations are exactly the next step's starting accelerations,
+    # so we only evaluate forces once per step.
+    accelerations = compute_accelerations(bodies)
     for _ in range(steps):
-        # 1. Calculate INITIAL accelerations (if first step) or use previous step's final accelerations.
-        # For simplicity, we calculate them fresh here, though it can be optimized.
-        accelerations = []
-        for i, body in enumerate(bodies):
-            ax = 0.0
-            ay = 0.0
-            for j, other in enumerate(bodies):
-                if i == j:
-                    continue
-                dx = other.x - body.x
-                dy = other.y - body.y
-                dist_sq = dx * dx + dy * dy
-                dist = dist_sq**0.5
-                if dist == 0.0:
-                    continue
-                force_per_mass = G * other.mass / dist_sq
-                ax += force_per_mass * dx / dist
-                ay += force_per_mass * dy / dist
-            accelerations.append((ax, ay))
-
-        # 2. First KICK (half-step velocity) & DRIFT (full-step position)
-        for i, (body, (ax, ay)) in enumerate(zip(bodies, accelerations)):
-            body.vx += 0.5 * ax * dt_seconds
-            body.vy += 0.5 * ay * dt_seconds
-            body.x += body.vx * dt_seconds
-            body.y += body.vy * dt_seconds
-
-        # 3. Recalculate NEW accelerations based on NEW positions
-        new_accelerations = []
-        for i, body in enumerate(bodies):
-            ax = 0.0
-            ay = 0.0
-            for j, other in enumerate(bodies):
-                if i == j:
-                    continue
-                dx = other.x - body.x
-                dy = other.y - body.y
-                dist_sq = dx * dx + dy * dy
-                dist = dist_sq**0.5
-                if dist == 0.0:
-                    continue
-                force_per_mass = G * other.mass / dist_sq
-                ax += force_per_mass * dx / dist
-                ay += force_per_mass * dy / dist
-            new_accelerations.append((ax, ay))
-
-        # 4. Second KICK (half-step velocity) with NEW accelerations
-        for i, (body, (ax, ay)) in enumerate(zip(bodies, new_accelerations)):
-            body.vx += 0.5 * ax * dt_seconds
-            body.vy += 0.5 * ay * dt_seconds
+        accelerations = leapfrog_step(bodies, dt_seconds, accelerations)
+        for body in bodies:
             trajectories[body.name].append((body.x, body.y))
 
     return trajectories

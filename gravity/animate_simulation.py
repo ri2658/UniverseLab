@@ -41,7 +41,7 @@ def generate_animation(_days: float = 365.0, _step_hours: float = 24.0):
     ax.set_zlim(-span*1.1, span*1.1) # Create a cubic 3D volume
     
     ax.axis('off') # Hide grid and axes for a cinematic space look
-    ax.set_title(f"3D Project of Earth-Sun-Moon System ({days} days, {step_hours} hour intervals)", color='white', pad=20, fontsize=14)
+    ax.set_title(f"3D Projection of Earth-Sun-Moon System ({days} days, {step_hours} hour intervals)", color='white', pad=20, fontsize=14)
     time_text = ax.text2D(0.02, 0.96, "", transform=ax.transAxes, color='white', fontsize=12)
 
     colors = {"Sun": "#f6c431", "Earth": "#3b82f6", "Moon": "#9ca3af"}
@@ -115,7 +115,7 @@ def generate_animation(_days: float = 365.0, _step_hours: float = 24.0):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Earth-Sun-Moon n-body simulation outputs.")
-    parser.add_argument("--days", type=float, default=365.0, help="Total simulated days (default: 363).")
+    parser.add_argument("--days", type=float, default=365.0, help="Total simulated days (default: 365).")
     parser.add_argument("--step-hours", type=float, default=24.0, help="Simulation time step in hours (default: 24).")
     args = parser.parse_args()
     generate_animation(_days=args.days, _step_hours=args.step_hours)

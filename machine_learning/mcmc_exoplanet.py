@@ -88,18 +88,19 @@ def plot_posterior(samples):
     burn_in = 1000
     valid_samples = samples[burn_in:]
     
+    # The style must be set before the figure exists, or ticks and spines stay black.
+    plt.style.use('dark_background')
     plt.figure(figsize=(10, 6))
     plt.hist(valid_samples, bins=50, color='#8b5cf6', alpha=0.7, density=True)
     plt.axvline(np.mean(valid_samples), color='#facc15', linestyle='dashed', linewidth=3, label=f'MCMC Guess: {np.mean(valid_samples):.2f}')
-    plt.axvline(50.0, color='#ef4444', linestyle='solid', linewidth=3, label='True Mass: 50.00')
+    plt.axvline(50.0, color='#ef4444', linestyle='solid', linewidth=3, label='True K: 50.00')
     
     # Modern styling
-    plt.style.use('dark_background')
     plt.gca().set_facecolor('#050b18')
     plt.gcf().set_facecolor('#050b18')
     
-    plt.title('MCMC Posterior Distribution of Exoplanet Mass', color='white', pad=20, fontsize=16)
-    plt.xlabel('Mass Amplitude (m/s)', color='white', fontsize=12)
+    plt.title('MCMC Posterior of RV Semi-Amplitude K', color='white', pad=20, fontsize=16)
+    plt.xlabel('Semi-amplitude K (m/s)', color='white', fontsize=12)
     plt.ylabel('Probability Density', color='white', fontsize=12)
     plt.legend(facecolor='#1e293b', edgecolor='none', labelcolor='white')
     
