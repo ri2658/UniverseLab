@@ -187,7 +187,50 @@ The periodogram shows **aliases**, false peaks created by the *observing schedul
 
 $$\frac{1}{P_\text{alias}} = \left|\frac{1}{P} \pm \frac{1}{365.25\text{ d}}\right|$$
 
-For $P = 111.4$ d that predicts aliases near **85 d** and **160 d**. Look for them in the notebook. (Ground-based telescopes also have a **1-day alias** because they can only observe at night. It's the reason some famous "planets" turned out to be the wrong period.)
+For $P = 111.4$ d that predicts aliases near **85 d** and **160 d**. Look for them in the notebook. (Ground-based telescopes also have a **1-day alias**, because they can only observe at night. The next subsection explains where aliases come from at a deeper level and why they are dangerous.)
+
+### Nyquist, aliases, and how much we can observe
+
+**Evenly spaced samples have a hard limit.** Suppose we observe at $t_k = k\Delta$. A sinusoid of frequency $f$ gives the samples $\sin(2\pi f k\Delta + \varphi)$, and for any integer $m$
+
+$$\sin\!\big(2\pi (f - m/\Delta)\,k\Delta + \varphi\big) = \sin\!\big(2\pi f k\Delta + \varphi - 2\pi m k\big) = \sin(2\pi f k\Delta + \varphi).$$
+
+So $f$ and $f - m/\Delta$ produce *identical* data. Only a band of width $1/\Delta$ can be told apart, conventionally $|f| \le f_N = 1/(2\Delta)$, the **Nyquist frequency**. Everything above it is folded back into that band. (The sampling theorem is the converse: a signal with nothing above $f_N$ is completely determined by its samples.)
+
+Here is what that means for us. Fifty observations spread *evenly* over our 1095-day baseline are 21.9 d apart, so the Nyquist limit is a period of 43.8 d. A 20-day planet ($f = 0.0500\ \text{d}^{-1}$) then looks exactly like a signal at $f - 1/\Delta = 0.0043\ \text{d}^{-1}$, a 231-day period. The two periodogram peaks tie, so the data cannot choose. (In a quick simulation with $K = 50$ m/s and $\sigma = 10$ m/s, both peaks had power 0.95.)
+
+**Irregular times break the tie.** With irregular times there is no single $\Delta$ that makes $f$ and $f - m/\Delta$ coincide at every sample, so the aliases stop matching the data and sink into a low noise floor. The same simulation with 50 *random* times gave power 0.94 at the true 20 d and 0.01 at 231 d. So for uneven sampling there is no hard Nyquist limit at the *average* spacing. (Roughly speaking, the smallest spacings set the limit instead.) That is why a Lomb–Scargle periodogram stays useful at frequencies far above $N/2T$.
+
+**Real schedules are irregular, but not random.** Telescopes work at night, and stars are only up for part of the year, so the window has *structure*. That structure is what puts the sharp aliases at $1/P \pm 1/\text{yr}$ and $1/P \pm 1/\text{day}$. For inference this has a nasty consequence: each alias is a separate narrow mode of the posterior, and an ensemble started near one of them stays there. Start at, or converge to, the wrong alias and you report a confident wrong period. This has happened to real planets. 55 Cancri e was first reported with $P \approx 2.8$ d and later shown to have $P = 0.7365$ d (Dawson & Fabrycky 2010), which a later transit detection confirmed. With one observation per day, a 0.7365 d signal is aliased to $1/|1/0.7365 - 1| = 2.795$ d.
+
+**What limits the number of observations?** The limit is rarely the raw count. It is *when* and *how well* we can observe:
+
+- **The Earth.** Night only (the 1-day alias), seasonal visibility (the yearly alias), weather.
+- **Photons.** A point's precision comes from the light collected, $\sigma_i^2 \propto 1/t_i$ for an exposure of length $t_i$. So $\sum_i 1/\sigma_i^2 \propto \sum_i t_i$: for white noise, the information depends on the *total* exposure time, and splitting it into many short exposures gains nothing. Overheads (slewing, detector readout) make short exposures strictly worse.
+- **The star.** Jitter sets a precision floor. With the jitter model of Part 2, each point has variance $\sigma_i^2 + s^2$, so once $\sigma_i \ll s$, better precision *per point* no longer helps. Only more points, spread over time, do.
+- **The baseline.** You can't speed up time. A period longer than the campaign can't be found.
+- **Cost and stability.** Telescope time is competitive, and the spectrograph must stay stable for years.
+
+What the observations buy you is quantified by the exact posterior from your first MCMC lesson: $\sigma_K = \big(\sum_i \sin^2(2\pi t_i/P)/\sigma_i^2\big)^{-1/2}$. With well-spread phases, $\sum_i \sin^2 \approx N/2$, so
+
+$$\sigma_K \approx \sigma\sqrt{\frac{2}{N}} \quad\longrightarrow\quad \sigma_K \gtrsim s\sqrt{\frac{2}{N}} \text{ once jitter dominates.}$$
+
+(The MCMC notebook's 50 points give $\sigma_K = 2.1$ m/s.) Four times as many observations only halve the uncertainty, which is why the cost of each extra point matters.
+
+**What engineers do about it.** This is the standard toolbox of signal processing, and most of it has a counterpart in radial-velocity work:
+
+| Technique | Idea | In radial-velocity work |
+|---|---|---|
+| **Anti-alias filter** | Remove the frequencies you can't sample *before* sampling | An exposure of length $\tau$ is a boxcar average, whose response $\sin(\pi f\tau)/(\pi f\tau)$ suppresses frequencies above $\sim 1/\tau$. Exposures of roughly 10–15 minutes average over a Sun-like star's few-minute oscillations |
+| **Oversampling** | Sample faster than needed, then filter and decimate | Take a few exposures per night and bin them |
+| **Random sampling (dithering)** | Irregular times turn coherent aliases into a noise floor | Don't observe at the same hour every night. Use Lomb–Scargle, which handles uneven times |
+| **Interleaved samplers** | Offset samplers fill each other's gaps | Telescopes at different longitudes, or space missions (Kepler, TESS) that observe continuously |
+| **Window analysis** | Compute the window's spectrum, check whether a peak sits at $f \pm f_w$, and remove it (CLEAN, prewhitening) | Compare your periodogram with the spectral window of your schedule |
+| **Adaptive design** | Choose the next sample to maximize the information gained | Schedule the next observation where the competing aliases predict the most different velocities |
+| **Independent data** | A different measurement breaks the degeneracy | Transits or astrometry give the period directly |
+| **Multimodal inference** | Keep every mode and weigh them | Parallel tempering, nested sampling, or comparing the Bayesian evidence of each alias |
+
+The last row matters for us. The ensemble sampler of Part 3 explores *one* mode well and will not tell you about the others, so the periodogram, and a look at its aliases, is how we decide where to start.
 
 ### Optimize, *then* sample
 
@@ -358,4 +401,6 @@ The payoff comes after Check 4, when your analytic model lands on top of your N-
 - D. Foreman-Mackey et al. (2013), *emcee: The MCMC Hammer*, PASP 125, 306. A very readable practical guide, including autocorrelation-time advice.
 - A. Sokal (1997), *Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms*. The adaptive window (and more stat-mech ↔ MCMC connections).
 - M. Perryman, *The Exoplanet Handbook*, Chapter 2. Everything about radial velocities.
+- J. VanderPlas (2018), *Understanding the Lomb–Scargle Periodogram*, ApJS 236, 16. Uneven sampling, window functions and aliases, explained carefully.
+- R. Dawson & D. Fabrycky (2010), *Radial velocity planets de-aliased: a new, short period for super-Earth 55 Cnc e*, ApJ 722, 937. A real planet with the wrong period.
 - M. Mayor & D. Queloz (1995), *A Jupiter-mass companion to a solar-type star*, Nature 378, 355. 51 Peg b, the discovery that started it all.
